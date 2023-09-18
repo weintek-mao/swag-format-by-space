@@ -37,12 +37,19 @@ type Config struct {
 
 	// MainFile (DEPRECATED)
 	MainFile string
+
+	// Use space instead of tab character to format documents
+	PadWithSpace bool
 }
 
 var defaultExcludes = []string{"docs", "vendor"}
 
 // Build runs formatter according to configuration in config
 func (f *Format) Build(config *Config) error {
+	if config.PadWithSpace {
+		f.formatter.PadWithSpace()
+	}
+
 	searchDirs := strings.Split(config.SearchDir, ",")
 	for _, searchDir := range searchDirs {
 		if _, err := os.Stat(searchDir); os.IsNotExist(err) {

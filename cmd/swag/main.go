@@ -40,6 +40,7 @@ const (
 	packageName              = "packageName"
 	collectionFormatFlag     = "collectionFormat"
 	packagePrefixFlag        = "packagePrefix"
+	useSpacePadChar          = "useSpacePadChar"
 )
 
 var initFlags = []cli.Flag{
@@ -265,11 +266,13 @@ func main() {
 				searchDir := c.String(searchDirFlag)
 				excludeDir := c.String(excludeFlag)
 				mainFile := c.String(generalInfoFlag)
+				useSpacePadChar := c.Bool(useSpacePadChar)
 
 				return format.New().Build(&format.Config{
-					SearchDir: searchDir,
-					Excludes:  excludeDir,
-					MainFile:  mainFile,
+					SearchDir:    searchDir,
+					Excludes:     excludeDir,
+					MainFile:     mainFile,
+					PadWithSpace: useSpacePadChar,
 				})
 			},
 			Flags: []cli.Flag{
@@ -288,6 +291,11 @@ func main() {
 					Aliases: []string{"g"},
 					Value:   "main.go",
 					Usage:   "Go file path in which 'swagger general API Info' is written",
+				},
+				&cli.BoolFlag{
+					Name:  useSpacePadChar,
+					Value: false,
+					Usage: "Use space instead of tab character to format documents",
 				},
 			},
 		},

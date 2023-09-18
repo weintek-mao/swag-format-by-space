@@ -34,14 +34,25 @@ var skipChar = map[byte]byte{
 type Formatter struct {
 	// debugging output goes here
 	debug Debugger
+
+	padchar byte
 }
 
 // NewFormatter create a new formatter instance.
 func NewFormatter() *Formatter {
 	formatter := &Formatter{
-		debug: log.New(os.Stdout, "", log.LstdFlags),
+		debug:   log.New(os.Stdout, "", log.LstdFlags),
+		padchar: '\t',
 	}
 	return formatter
+}
+
+func (f *Formatter) PadWithSpace() {
+	f.padchar = ' '
+}
+
+func (f *Formatter) PadWithTab() {
+	f.padchar = '\t'
 }
 
 // Format formats swag comments in contents. It uses fileName to report errors
@@ -66,7 +77,7 @@ func (f *Formatter) Format(fileName string, contents []byte) ([]byte, error) {
 	edits := make(edits, 0, maxEdits)
 
 	for _, comment := range ast.Comments {
-		formatFuncDoc(fileSet, comment.List, &edits)
+		f.formatFuncDoc(fileSet, comment.List, &edits)
 	}
 
 	return edits.apply(contents), nil
@@ -98,7 +109,7 @@ func (edits edits) apply(contents []byte) []byte {
 
 // formatFuncDoc reformats the comment lines in commentList, and appends any
 // changes to the edit list.
-func formatFuncDoc(fileSet *token.FileSet, commentList []*ast.Comment, edits *edits) {
+func (f *Formatter) formatFuncDoc(fileSet *token.FileSet, commentList []*ast.Comment, edits *edits) {
 	// Building the edit list to format a comment block is a two-step process.
 	// First, we iterate over each comment line looking for Swag attributes. In
 	// each one we find, we replace alignment whitespace with a tab character,
@@ -107,14 +118,14 @@ func formatFuncDoc(fileSet *token.FileSet, commentList []*ast.Comment, edits *ed
 	linesToComments := make(map[int]int, len(commentList))
 
 	buffer := &bytes.Buffer{}
-	w := tabwriter.NewWriter(buffer, 1, 4, 1, '\t', 0)
+	w := tabwriter.NewWriter(buffer, 1, 4, 1, f.padchar, 0)
 
 	for commentIndex, comment := range commentList {
 		text := comment.Text
 		if attr, body, found := swagComment(text); found {
-			formatted := "//\t" + attr
+			formatted := "//" + string(f.padchar) + attr
 			if body != "" {
-				formatted += "\t" + splitComment2(attr, body)
+				formatted += string(f.padchar) + splitComment2(attr, body)
 			}
 			_, _ = fmt.Fprintln(w, formatted)
 			linesToComments[len(linesToComments)] = commentIndex

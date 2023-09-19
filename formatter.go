@@ -35,24 +35,23 @@ type Formatter struct {
 	// debugging output goes here
 	debug Debugger
 
-	padchar byte
+	padWithSpace bool
 }
 
 // NewFormatter create a new formatter instance.
 func NewFormatter() *Formatter {
 	formatter := &Formatter{
-		debug:   log.New(os.Stdout, "", log.LstdFlags),
-		padchar: '\t',
+		debug: log.New(os.Stdout, "", log.LstdFlags),
 	}
 	return formatter
 }
 
 func (f *Formatter) PadWithSpace() {
-	f.padchar = ' '
+	f.padWithSpace = true
 }
 
 func (f *Formatter) PadWithTab() {
-	f.padchar = '\t'
+	f.padWithSpace = false
 }
 
 // Format formats swag comments in contents. It uses fileName to report errors
@@ -118,14 +117,22 @@ func (f *Formatter) formatFuncDoc(fileSet *token.FileSet, commentList []*ast.Com
 	linesToComments := make(map[int]int, len(commentList))
 
 	buffer := &bytes.Buffer{}
-	w := tabwriter.NewWriter(buffer, 1, 4, 1, f.padchar, 0)
+	padchar := byte('\t')
+	if f.padWithSpace {
+		padchar = ' '
+	}
+	w := tabwriter.NewWriter(buffer, 1, 4, 1, padchar, 0)
 
 	for commentIndex, comment := range commentList {
 		text := comment.Text
 		if attr, body, found := swagComment(text); found {
-			formatted := "//" + string(f.padchar) + attr
+			formatted := "//" + string(padchar)
+			if f.padWithSpace { // extra space
+				formatted += string(padchar)
+			}
+			formatted += attr
 			if body != "" {
-				formatted += string(f.padchar) + splitComment2(attr, body)
+				formatted += string(padchar) + splitComment2(attr, body)
 			}
 			_, _ = fmt.Fprintln(w, formatted)
 			linesToComments[len(linesToComments)] = commentIndex
